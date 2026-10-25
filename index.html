@@ -44,7 +44,7 @@ h1{font-size:20px;margin:6px 0}
 <body>
 <div id="app"></div><div id="toast"></div>
 <script>
-const API=''; // ← วาง Apps Script Web App URL ที่นี่
+const API='https://script.google.com/macros/s/AKfycbxHItXcPCj7guHs9WCVc5ER0pCS0NfXVDLJ_PTEZo8VRD5rWC5SUeAbX8Jin59jiA4U/exec'; // ← วาง Apps Script Web App URL ที่นี่
 const L=localStorage,J=JSON,$=s=>document.querySelector(s);
 const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},ok:0};
 const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
