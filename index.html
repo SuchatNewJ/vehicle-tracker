@@ -1,1 +1,221 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<meta name="theme-color" content="#F4F7F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121715" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600&display=swap">
+<title>Vehicle Tracker</title>
+<style>
+:root{--bg:#F4F7F5;--s:#fff;--b:#DDE5E0;--t:#1F2A27;--m:#5E6F69;--p:#2F7F72;--op:#fff;--so:#E3F1ED;color-scheme:light}
+:root[data-d]{--bg:#121715;--s:#1B2320;--b:#2B3632;--t:#E6EEEA;--m:#9AAAA3;--p:#5CB8A6;--op:#0B1F1B;--so:#1F332E;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:16px/1.4 'Noto Sans Thai',system-ui,sans-serif;font-variant-numeric:tabular-nums}
+#app{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(110px + env(safe-area-inset-bottom))}
+button,input,select{font-family:inherit;color:inherit}
+h1{font-size:20px;margin:6px 0}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.sc{overflow-x:auto;scrollbar-width:none}.sc>*{flex:none}
+.m{color:var(--m);font-size:13px}
+.chip{height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--b);background:var(--s);font-size:15px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--p);color:var(--op);border-color:var(--p);font-weight:600}
+.card{display:block;flex:1;min-width:0;background:var(--s);border:1px solid var(--b);border-radius:16px;padding:8px 14px}
+.card span{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--m)}
+.card i{font-style:normal}
+.card input,.card select{width:100%;border:0;background:transparent;font-size:22px;font-weight:600;padding:2px 0;outline:0}
+.card .sm{font-size:16px;font-weight:500}
+.calc{background:var(--so);border-radius:16px;padding:8px 14px;margin:8px 0}.calc span{font-size:12px;display:block}.calc b{font-size:22px}
+.btn{width:100%;height:52px;border:0;border-radius:16px;background:var(--p);color:var(--op);font-size:17px;font-weight:600;margin:8px 0}
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--s);border:1px solid var(--b)}
+.seg button{flex:1;height:44px;border:0;border-radius:10px;background:none;font-size:15px}.seg .on{background:var(--p);color:var(--op);font-weight:600}
+.r{display:flex;gap:6px;align-items:center;background:var(--s);border:1px solid var(--b);border-radius:14px;padding:10px 12px;margin:8px 0}.r>div:first-child{flex:1;min-width:0}
+.lk{border:0;background:none;color:var(--p);min-height:44px;padding:0 6px;font-size:14px;font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--s);border-top:1px solid var(--b);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.bar button{flex:1;border:0;background:none;color:var(--m);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;min-height:48px}.bar .on{color:var(--p);font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--t);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:9}#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast"></div>
+<script>
+const API=''; // ← วาง Apps Script Web App URL ที่นี่
+const L=localStorage,J=JSON,$=s=>document.querySelector(s);
+const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},ok:0};
+const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
+const NO=['installment','insurance','registration'],FT=['Gasohol95','Gasohol91','E20','E85','B7','Super Power'];
+const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const IC={add:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso=(d=new Date())=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const D=()=>S.data||{vehicles:[],entries:[],insurance:[],settings:{},profile:{}};
+const fd=s=>{const[y,m,d]=s.split('-');return +d+' '+MON[m-1]+' '+(D().settings.year_format==='BE'?+y+543:y)};
+const num=v=>v===''||v==null?null:+String(v).replace(/,/g,'');
+const fmt=(n,d=0)=>n==null?'–':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const days=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/864e5);
+const ekey=e=>e.date+String(e.odometer||0).padStart(8,'0')+(e.created_at||'');
+const veh=id=>D().vehicles.find(v=>v.vehicle_id===id);
+const ents=vid=>D().entries.filter(e=>e.vehicle_id===vid&&!e.deleted).sort((a,b)=>ekey(a)<ekey(b)?-1:1);
+const tl=t=>(TY.find(x=>x[0]===t)||[0,t])[1];
+const persist=()=>{L.cfg=J.stringify(S.cfg);L.data=J.stringify(S.data);L.q=J.stringify(S.q);L.th=S.th};
+const priceFor=(vid,ft)=>{const e=ents(vid).reverse().find(e=>e.type==='fuel'&&e.fuel_type===ft&&e.fuel_price);return e?e.fuel_price:null};
+const hav=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742000*Math.asin(Math.sqrt(x))};
+const opts=(l,c)=>l.map(x=>{const[v,t]=Array.isArray(x)?x:[x,x];return`<option value="${v}"${v===c?' selected':''}>${t}</option>`}).join('');
 
+// ระยะ/วันจากรายการประเภทเดียวกันครั้งก่อน (คำนวณตอนแสดงผล ไม่เก็บลงชีต)
+function derive(list){const last={};return list.map(e=>{const p=last[e.type];last[e.type]=e;
+ return{...e,dd:p?days(p.date,e.date):null,dk:p&&e.odometer!=null&&p.odometer!=null?e.odometer-p.odometer:null}})}
+
+function newF(vid){const V=veh(vid)||{},A=ents(vid),last=[...A].reverse().find(e=>e.odometer!=null),lf=[...A].reverse().find(e=>e.type==='fuel'),lp=[...A].reverse().find(e=>e.place_name);
+ const ft=(lf&&lf.fuel_type)||V.default_fuel_type||'Gasohol95',full=V.default_fill_mode?V.default_fill_mode==='full':!!(lf&&lf.full_tank);
+ return{vid,type:'fuel',date:iso(),odo:last?last.odometer:'',amt:full?'':(V.default_amount||''),price:priceFor(vid,ft)||'',lt:'',ft,full,place:lp?lp.place_name:'',lat:null,lng:null,note:'',item:''}}
+function calc(){const F=S.F,a=num(F.amt),p=num(F.price),l=num(F.lt);
+ return{a:a!=null?a:(l&&p?Math.round(l*p*100)/100:null),l:l!=null?l:(a&&p?Math.round(a/p*100)/100:null)}}
+function qa(F){const V=veh(F.vid)||{},qv=String(V.quick_amounts||'').split(/[ ,;]+/).map(Number).filter(Boolean);if(qv.length)return qv;const c={};ents(F.vid).filter(e=>e.type==='fuel'&&e.amount).forEach(e=>c[e.amount]=(c[e.amount]||0)+1);
+ const t=Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,5).map(Number);return t.length?t.sort((a,b)=>a-b):[100,150,200,300,500]}
+
+async function api(action,payload){const r=await fetch(S.cfg.api||API,{method:'POST',headers:{'Content-Type':'text/plain'},body:J.stringify({action,token:S.cfg.token,payload})});
+ const j=await r.json();if(!j.ok)throw new Error(j.error);return j.data}
+let busy=false;
+async function flush(){if(busy||!S.cfg.token)return;busy=true;
+ try{while(S.q.length){await api(S.q[0].a,S.q[0].p);S.q.shift();persist()}S.data=await api('bootstrap');persist();S.ok=1;S.err=''}
+ catch(x){S.ok=0;S.err=x.message}
+ busy=false;const f=document.activeElement;if(!(f&&f.dataset&&f.dataset.k))render()}
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
+const mq=matchMedia('(prefers-color-scheme: dark)');
+function th(){document.documentElement.toggleAttribute('data-d',S.th==='dark'||(S.th==='auto'&&mq.matches))}mq.onchange=th;
+
+// ----- หน้าจอ -----
+const hd=t=>`<div class="row" style="justify-content:space-between"><h1>${t}</h1><span class="m">${S.ok?'● ซิงก์แล้ว':'○ ออฟไลน์'}${S.q.length?' · รอส่ง '+S.q.length:''}</span><button class="chip" aria-label="สลับธีม" data-a="tg" style="width:44px;padding:0">◐</button></div>`;
+const bar=()=>`<nav class="bar">${[['add','บันทึก'],['list','รายการ'],['set','ตั้งค่า']].map(t=>`<button class="${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${IC[t[0]]}</svg>${t[1]}</button>`).join('')}</nav>`;
+const ch=(l,a,v,on)=>`<button class="chip${on?' on':''}" data-a="${a}" data-v="${esc(v)}">${l}</button>`;
+const vchips=cur=>D().vehicles.length>1?`<div class="row sc">${D().vehicles.map(v=>ch(esc(v.nickname),'veh',v.vehicle_id,v.vehicle_id===cur)).join('')}</div>`:'';
+
+const KL={compulsory:'พ.ร.บ.',voluntary:'ประกันภาคสมัครใจ',combined:'ประกัน+พ.ร.บ.'};
+function insStat(vid){const by={};(D().insurance||[]).filter(p=>p.vehicle_id===vid&&p.end_date).forEach(p=>{if(!by[p.kind]||p.end_date>by[p.kind].end_date)by[p.kind]=p});
+ return Object.values(by).map(p=>({p,left:days(iso(),p.end_date)}))}
+const insBanner=vid=>insStat(vid).filter(x=>x.left<=30).map(x=>`<div class="calc"><b style="font-size:15px">${KL[x.p.kind]||'ประกัน'} ${x.left<0?'หมดอายุแล้ว ('+fd(x.p.end_date)+')':'เหลือ '+x.left+' วัน'}</b></div>`).join('');
+function insSec(){const vid=S.F&&S.F.vid;if(!vid)return'';const I=S.I,vv=veh(vid)||{};
+ return`<p class="m">ประกัน/พ.ร.บ. — ${esc(vv.nickname)}</p>`+insStat(vid).map(x=>`<div class="r"><div><b>${KL[x.p.kind]||'ประกัน'}</b> · ${esc(x.p.company||'')}<div class="m">ถึง ${fd(x.p.end_date)} · ${x.left<0?'หมดอายุแล้ว':'เหลือ '+x.left+' วัน'}${x.p.premium?' · ฿'+fmt(x.p.premium,2):''}</div></div></div>`).join('')
+ +`<div class="row"><label class="card"><span>ชนิด</span><select class="sm" data-k="ik">${opts([['compulsory','พ.ร.บ.'],['voluntary','ประกันภาคสมัครใจ'],['combined','ประกัน+พ.ร.บ.']],I.ik||'compulsory')}</select></label><label class="card"><span>เบี้ย (บาท)</span><input class="sm" data-k="ip" inputmode="decimal" value="${esc(I.ip)}"></label></div>`
+ +`<div class="row"><label class="card"><span>บริษัท</span><input class="sm" data-k="ic" value="${esc(I.ic)}"></label><label class="card"><span>เลขกรมธรรม์</span><input class="sm" data-k="in" value="${esc(I.in)}"></label></div>`
+ +`<div class="row"><label class="card"><span>เริ่ม</span><input class="sm" type="date" data-k="is" value="${esc(I.is)}"></label><label class="card"><span>สิ้นสุด</span><input class="sm" type="date" data-k="ie" value="${esc(I.ie)}"></label></div><button class="btn" data-a="addins">บันทึกกรมธรรม์ใหม่</button>`}
+function addins(){const I=S.I,vid=S.F&&S.F.vid;if(!vid||!I.ie||!S.data)return toast('ใส่วันที่สิ้นสุด');
+ const p={id:[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join(''),vehicle_id:vid,kind:I.ik||'compulsory',policy_no:I.in||'',company:I.ic||'',start_date:I.is||'',end_date:I.ie,premium:num(I.ip),note:''};
+ (S.data.insurance=S.data.insurance||[]).push(p);S.q.push({a:'saveInsurance',p});S.I={};persist();flush();render()}
+function copyV(id){const v=veh(id);if(!v)return;const j=a=>a.filter(Boolean).join(' ');
+ const t=[['ทะเบียน',j([v.plate,v.province])],['วันที่จดทะเบียน',v.registered_date?fd(v.registered_date):''],['รุ่นปี',v.model_year],['สี',v.color],['ชื่อรุ่น',v.model_name],['แบบ',v.body_type],['เลขตัวถัง',j([v.chassis_no,v.chassis_location])],['เลขเครื่องยนต์',j([v.engine_no,v.engine_location])],['เครื่องยนต์',v.engine_spec],['แรงม้า',v.horsepower],['น้ำหนัก (กก.)',v.weight_kg],['ความจุถัง (ลิตร)',v.tank_liters]];
+ navigator.clipboard.writeText(t.filter(x=>x[1]).map(x=>x[0]+': '+x[1]).join('\n')).then(()=>toast('คัดลอกข้อมูลรถแล้ว'),()=>toast('คัดลอกไม่ได้'))}
+function vPair(){return`<h1>จับคู่อุปกรณ์</h1><p class="m">กรอกรหัสจับคู่ 6 หลักจากเจ้าของระบบ (หรือ token)</p>`
+ +((S.cfg.api||API)?'':`<label class="card"><span>Apps Script URL</span><input class="sm" data-k="au" value="${esc(S.p.au)}"></label>`)
+ +`<label class="card" style="margin-top:8px"><span>รหัสจับคู่</span><input data-k="pc" inputmode="numeric" value="${esc(S.p.pc)}"></label><button class="btn" data-a="pair">จับคู่</button>`}
+
+function vAdd(){const F=S.F;if(!F)return hd('บันทึก')+'<p class="m">ยังไม่มีรถ — ไปที่ ตั้งค่า เพื่อเพิ่มรถ (ถ้าเพิ่งจับคู่ รอซิงก์สักครู่)</p>';
+ const V=veh(F.vid)||{},isF=F.type==='fuel',no=NO.includes(F.type),c=calc();
+ const pv=ents(F.vid).filter(e=>e.type===F.type&&e.date<=F.date&&e.id!==F.id).pop();
+ const hint=pv?`ครั้งก่อน ${pv.odometer!=null?fmt(pv.odometer)+' · ':''}${days(pv.date,F.date)} วันที่แล้ว`:'';
+ const fts=D().settings.fuel_types?String(D().settings.fuel_types).split(','):FT;
+ const items=[...new Set(D().entries.map(e=>e.item).filter(Boolean))];
+ return hd(F.id?'แก้ไขรายการ':'บันทึก')+vchips(F.vid)+insBanner(F.vid)+(D().vehicles.length>1?'':`<div class="m">${esc(V.nickname)}</div>`)
+ +`<div class="row sc">${TY.map(t=>ch(t[1],'type',t[0],t[0]===F.type)).join('')}</div>`
+ +`<div class="row sc">${ch('วันนี้','date','t',F.date===iso())}${ch('เมื่อวาน','date','y',F.date===iso(new Date(Date.now()-864e5)))}<input type="date" class="chip" data-k="date" value="${F.date}" aria-label="เลือกวันที่"></div>`
+ +`<div class="row"><label class="card"><span>${no?'เลขไมล์ (ไม่บังคับ)':'เลขไมล์ (กม.)'}<i>${hint}</i></span><input data-k="odo" inputmode="numeric" value="${F.odo}"></label></div>`
+ +`<div class="row"><label class="card"><span>ยอดเงิน (บาท)</span><input data-k="amt" inputmode="decimal" value="${F.amt}"></label></div>`
+ +(isF&&!F.full?`<div class="row sc">${qa(F).map(a=>ch('฿'+fmt(a),'qa',a,+F.amt===a)).join('')+ch('เต็มถัง','mode','1',false)}</div>`:'')
+ +(isF?`<div class="row"><label class="card"><span>ราคา/ลิตร</span><input data-k="price" inputmode="decimal" value="${F.price}"></label><label class="card"><span>ลิตร${F.full?' (จากสลิป)':''}</span><input data-k="lt" inputmode="decimal" placeholder="${c.l==null?'':c.l}" value="${F.lt}"></label></div>`
+  +`<div class="row sc">${fts.map(f=>ch(f,'ft',f,f===F.ft)).join('')}</div>`
+  +`<div class="seg">${['ตามยอดเงิน','เต็มถัง'].map((t,i)=>`<button class="${!!F.full===!!i?'on':''}" data-a="mode" data-v="${i}">${t}</button>`).join('')}</div>`
+  :`<div class="row"><label class="card"><span>รายการย่อย</span><input class="sm" data-k="item" list="il" value="${esc(F.item)}"></label></div><datalist id="il">${items.map(i=>`<option value="${esc(i)}">`).join('')}</datalist>`)
+ +`<div class="row"><label class="card"><span>สถานที่</span><input class="sm" data-k="place" value="${esc(F.place)}"></label></div>`
+ +`<div class="row"><label class="card"><span>หมายเหตุ</span><input class="sm" data-k="note" value="${esc(F.note)}"></label></div>`
+ +`<button class="btn" data-a="save">${F.id?'บันทึกการแก้ไข':'บันทึก'}</button>`+(F.id?'<button class="lk" data-a="cancel">ยกเลิกการแก้ไข</button>':'')}
+
+function vList(){const vid=(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id,all=derive(ents(vid)).reverse(),ym=iso().slice(0,7),mo=all.filter(e=>e.date.startsWith(ym));
+ const rowsH=all.slice(0,150).map(e=>`<div class="r"><div><b>${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${fd(e.date)}${e.odometer!=null?' · ไมล์ '+fmt(e.odometer):''}${e.dk!=null?' (+'+fmt(e.dk)+' กม.)':''}${e.dd!=null?' · '+e.dd+' วัน':''}</div>`
+  +(e.type==='fuel'?`<div class="m">${esc(e.fuel_type)} · ${fmt(e.liters,2)} ล. @${fmt(e.fuel_price,2)}${e.full_tank?' · เต็มถัง':''}</div>`:'')
+  +(e.place_name?`<div class="m">${esc(e.place_name)}</div>`:'')+(e.note?`<div class="m">${esc(e.note)}</div>`:'')+(e.review?`<div class="m">⚠ ${esc(e.review)}</div>`:'')
+  +`</div><b>${e.amount!=null?fmt(e.amount,2):'–'}</b><button class="lk" data-a="edit" data-v="${e.id}">แก้</button><button class="lk" data-a="del" data-v="${e.id}">ลบ</button></div>`).join('');
+ return hd('รายการ')+vchips(vid)+`<div class="calc"><span>เดือนนี้ · ${mo.length} รายการ</span><b>฿${fmt(mo.reduce((s,e)=>s+(e.amount||0),0),2)}</b></div>`+(rowsH||'<p class="m">ยังไม่มีรายการ</p>')}
+
+function vSet(){const d=D();return hd('ตั้งค่า')
+ +`<div class="card"><span>โปรไฟล์ <i>รอส่ง ${S.q.length} รายการ</i></span><b>${esc(d.profile.name||'-')}</b><span>${S.ok?'ซิงก์แล้ว':'ออฟไลน์ '+esc(S.err)}</span></div>`
+ +`<div class="row"><button class="chip" data-a="sync">ซิงก์ใหม่</button><button class="chip" data-a="out">ออกจากโปรไฟล์</button></div>`
+ +`<p class="m">ธีม</p><div class="row">${[['auto','ตามระบบ'],['light','สว่าง'],['dark','มืด']].map(x=>ch(x[1],'th',x[0],S.th===x[0])).join('')}</div>`
+ +`<p class="m">รถ</p>`+d.vehicles.map(v=>`<div class="r"><div><b>${esc(v.nickname)}</b>${v.plate?' · '+esc(v.plate):''}<div class="m">${esc(v.vehicle_kind||'')} · ถัง ${v.tank_liters||'–'} ล. · ${esc(v.default_fuel_type||'')}</div></div><button class="lk" data-a="copyv" data-v="${esc(v.vehicle_id)}">คัดลอกข้อมูล</button></div>`).join('')
+ +`${insSec()}<p class="m">เพิ่มรถ</p><label class="card"><span>ชื่อรถ</span><input class="sm" data-k="vn" value="${esc(S.V.vn)}"></label>`
+ +`<div class="row"><label class="card"><span>ถัง (ลิตร)</span><input class="sm" data-k="vt" inputmode="decimal" value="${esc(S.V.vt)}"></label><label class="card"><span>ชนิดรถ</span><select class="sm" data-k="vk">${opts([['motorcycle','มอเตอร์ไซค์'],['pickup','กระบะ'],['car','รถยนต์']],S.V.vk||'motorcycle')}</select></label></div>`
+ +`<div class="row"><label class="card"><span>น้ำมันเริ่มต้น</span><select class="sm" data-k="vf">${opts(FT,S.V.vf||'Gasohol95')}</select></label><label class="card"><span>โหมดเติม</span><select class="sm" data-k="vm">${opts([['amount','ตามยอดเงิน'],['full','เต็มถัง']],S.V.vm||'amount')}</select></label></div>`
+ +`<button class="btn" data-a="addveh">เพิ่มรถ</button>`}
+
+function render(){th();const a=$('#app');
+ if(!S.cfg.token){a.innerHTML=vPair();return}
+ if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
+ a.innerHTML=(S.tab==='add'?vAdd():S.tab==='list'?vList():vSet())+bar();if(S.tab==='add')gps()}
+
+// ----- ตำแหน่ง: ใช้ชื่อปั๊มจากรายการเก่าที่อยู่ในรัศมี 150 ม. -----
+function gps(){if(S.gps||!navigator.geolocation||D().settings.auto_gps===false)return;S.gps=1;
+ navigator.geolocation.getCurrentPosition(p=>{const F=S.F;if(!F||F.id)return;F.lat=+p.coords.latitude.toFixed(6);F.lng=+p.coords.longitude.toFixed(6);
+  let n='',bd=150;for(const e of D().entries){if(!e.place_name||e.lat==null)continue;const d=hav(F.lat,F.lng,e.lat,e.lng);if(d<bd){bd=d;n=e.place_name}}
+  F.place=n;const el=$('[data-k=place]');if(el)el.value=n},()=>{},{timeout:5000,maximumAge:60000})}
+
+// ----- การทำงาน -----
+function save(){const F=S.F,V=veh(F.vid);if(!V||!S.data)return toast('ยังไม่ได้ซิงก์');
+ const no=NO.includes(F.type),o=num(F.odo),c=calc(),isF=F.type==='fuel';
+ if(!no&&o==null)return toast('กรอกเลขไมล์');
+ if(isF&&(!c.a||!num(F.price)))return toast('กรอกยอดเงินและราคา/ลิตร');
+ if(o!=null){const pv=ents(F.vid).filter(e=>e.odometer!=null&&e.date<=F.date&&e.id!==F.id).pop();
+  if(pv){const dl=o-pv.odometer,dg=String(o).length<String(pv.odometer).length,lim=num(D().settings.odo_jump_warn_km)||1500;
+   if((dl<0||dg||dl>lim)&&!confirm(`ไมล์ ${fmt(o)} ต่างจากครั้งก่อน (${fmt(pv.odometer)}) ${dl>=0?'+':''}${fmt(dl)} กม.\nยืนยันบันทึก?`))return}}
+ if(isF&&c.l&&V.tank_liters&&c.l>V.tank_liters*1.05&&!confirm(`ลิตร ${c.l} เกินความจุถัง ${V.tank_liters} ลิตร ยืนยัน?`))return;
+ const now=new Date().toISOString(),old=F.id&&D().entries.find(e=>e.id===F.id);
+ const e={id:F.id||[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join(''),vehicle_id:F.vid,date:F.date,type:F.type,odometer:o,item:F.item||'',amount:c.a,amount_estimated:false,note:F.note||'',place_name:F.place||'',lat:F.lat,lng:F.lng,
+  fuel_type:isF?F.ft:'',fuel_price:isF?num(F.price):null,liters:isF?c.l:null,full_tank:isF?!!F.full:false,created_at:old?old.created_at:now,updated_at:now,deleted:false,review:''};
+ const E=D().entries,i=E.findIndex(x=>x.id===e.id);i<0?E.push(e):E[i]=e;
+ S.q.push({a:old?'updateEntry':'addEntry',p:e});persist();toast('บันทึกแล้ว ✓');S.F=newF(F.vid);S.gps=0;flush();render()}
+
+async function pair(){const code=(S.p.pc||'').trim(),u=S.cfg.api||API||(S.p.au||'').trim();if(!code||!u)return toast('กรอกให้ครบ');
+ S.cfg.api=u;try{S.cfg.token=code.length>10?code:(await api('claim',{code})).token;persist();await flush();render()}catch(x){S.cfg.token='';toast('ไม่สำเร็จ: '+x.message)}}
+function addveh(){const n=(S.V.vn||'').trim();if(!n||!S.data)return toast(n?'ยังไม่ได้ซิงก์':'ใส่ชื่อรถ');
+ const v={vehicle_id:n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'v'+Date.now().toString(36),nickname:n,vehicle_kind:S.V.vk||'motorcycle',tank_liters:num(S.V.vt),default_fuel_type:S.V.vf||'Gasohol95',default_fill_mode:S.V.vm||'amount'};
+ const A=D().vehicles,i=A.findIndex(x=>x.vehicle_id===v.vehicle_id);i<0?A.push(v):A[i]=v;S.q.push({a:'saveVehicle',p:v});S.V={};persist();flush();render()}
+
+function act(a,v){const F=S.F;
+ if(a==='tab')S.tab=v;
+ else if(a==='veh'){L.lv=v;S.F=newF(v);S.gps=0}
+ else if(a==='type')F.type=v;
+ else if(a==='date')F.date=iso(v==='t'?new Date():new Date(Date.now()-864e5));
+ else if(a==='ft'){F.ft=v;F.price=priceFor(F.vid,v)||''}
+ else if(a==='mode'){F.full=v==='1';F.amt=F.full?'':((veh(F.vid)||{}).default_amount||'')}
+ else if(a==='qa')F.amt=v;
+ else if(a==='tg'){S.th={auto:'light',light:'dark',dark:'auto'}[S.th];persist()}
+ else if(a==='th'){S.th=v;persist()}
+ else if(a==='cancel')S.F=newF(F.vid);
+ else if(a==='edit'){const e=D().entries.find(x=>x.id===v);S.F={vid:e.vehicle_id,id:e.id,type:e.type,date:e.date,odo:e.odometer==null?'':e.odometer,amt:e.amount==null?'':e.amount,price:e.fuel_price==null?'':e.fuel_price,lt:e.liters==null?'':e.liters,ft:e.fuel_type||'Gasohol95',full:!!e.full_tank,place:e.place_name||'',lat:e.lat,lng:e.lng,note:e.note||'',item:e.item||''};S.tab='add'}
+ else if(a==='del'){if(!confirm('ลบรายการนี้?'))return;const e=D().entries.find(x=>x.id===v);e.deleted=true;S.q.push({a:'deleteEntry',p:{id:v}});persist();flush()}
+ else if(a==='out'){if(!confirm('ออกจากโปรไฟล์? (รายการที่ยังไม่ได้ส่งจะหายไป)'))return;S.cfg={api:S.cfg.api};S.data=null;S.q=[];S.F=null;persist()}
+ else if(a==='copyv')return copyV(v);
+ else if(a==='addins')return addins();
+ else if(a==='sync')return flush();
+ else if(a==='save')return save();
+ else if(a==='pair')return pair();
+ else if(a==='addveh')return addveh();
+ render()}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)act(b.dataset.a,b.dataset.v)});
+document.addEventListener('input',e=>{const k=e.target.dataset.k,v=e.target.value;if(!k)return;
+ if(/^v[ntkfm]$/.test(k))S.V[k]=v;else if(/^i[kpcnse]$/.test(k))S.I[k]=v;else if(k==='pc'||k==='au')S.p[k]=v;
+ else if(S.F){S.F[k]=v;if(k==='amt'||k==='price'){const el=$('[data-k=lt]');if(el)el.placeholder=calc().l==null?'':calc().l}}});
+
+if(location.hash.indexOf('#join=')===0){S.p.pc=location.hash.slice(6);history.replaceState(null,'',location.pathname+location.search)}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();flush();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)flush()});addEventListener('online',flush);
+</script>
+</body>
+</html>
