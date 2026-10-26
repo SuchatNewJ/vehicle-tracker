@@ -42,6 +42,11 @@ h1{font-size:20px;margin:6px 0}
 .bar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--s);border-top:1px solid var(--b);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
 .bar button{flex:1;border:0;background:none;color:var(--m);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;min-height:48px}.bar .on{color:var(--p);font-weight:600}
 #toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--t);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:9}#toast.on{opacity:1}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}.cal i{display:block}.cal .h{text-align:center;font-size:12px;color:var(--m)}
+.cd{height:52px;border:1px solid var(--b);border-radius:10px;background:var(--s);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;padding:0}
+.cd small{font-size:11px;color:var(--p);font-weight:600}.cd.td{border-color:var(--p)}.cd.on{background:var(--p);color:var(--op)}.cd.on small{color:var(--op)}
+.br{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}.br span{width:92px;display:block;font-size:14px;color:var(--t)}.br>div{flex:1;background:var(--so);border-radius:6px;height:14px}.br u{display:block;height:14px;border-radius:6px;background:var(--p)}.br b{width:66px;text-align:right}
+.tr{display:flex;gap:4px;align-items:flex-end;height:108px}.tr>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px}.tr>div>div{width:100%;background:var(--p);border-radius:4px 4px 0 0;min-height:2px}.tr small{font-size:11px;color:var(--m)}
 </style>
 </head>
 <body>
@@ -49,11 +54,11 @@ h1{font-size:20px;margin:6px 0}
 <script>
 const API=''; // ← วาง Apps Script Web App URL ที่นี่
 const L=localStorage,J=JSON,$=s=>document.querySelector(s);
-const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},ok:0};
+const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',ok:0};
 const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
 const NO=['installment','insurance','registration'],FT=['Gasohol95','Gasohol91','E20','E85','B7','Super Power'];
 const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-const IC={add:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'};
+const IC={cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',sum:'<path d="M5 20V10M12 20V4M19 20v-7"/>',add:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=(d=new Date())=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const D=()=>S.data||{vehicles:[],entries:[],insurance:[],settings:{},profile:{}};
@@ -96,7 +101,7 @@ function th(){document.documentElement.toggleAttribute('data-d',S.th==='dark'||(
 
 // ----- หน้าจอ -----
 const hd=t=>`<div class="row" style="justify-content:space-between"><h1>${t}</h1><span class="m">${S.ok?'● ซิงก์แล้ว':'○ ออฟไลน์'}${S.q.length?' · รอส่ง '+S.q.length:''}</span><button class="chip" aria-label="สลับธีม" data-a="tg" style="width:44px;padding:0">◐</button></div>`;
-const bar=()=>`<nav class="bar">${[['add','บันทึก'],['list','รายการ'],['set','ตั้งค่า']].map(t=>`<button class="${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${IC[t[0]]}</svg>${t[1]}</button>`).join('')}</nav>`;
+const bar=()=>`<nav class="bar">${[['add','บันทึก'],['cal','ปฏิทิน'],['list','รายการ'],['sum','สรุป'],['set','ตั้งค่า']].map(t=>`<button class="${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${IC[t[0]]}</svg>${t[1]}</button>`).join('')}</nav>`;
 const ch=(l,a,v,on)=>`<button class="chip${on?' on':''}" data-a="${a}" data-v="${esc(v)}">${l}</button>`;
 const vchips=cur=>D().vehicles.length>1?`<div class="row sc">${D().vehicles.map(v=>ch(pimg(v,'vi')+esc(v.nickname),'veh',v.vehicle_id,v.vehicle_id===cur)).join('')}</div>`:'';
 
@@ -163,10 +168,52 @@ function vSet(){const d=D();return hd('ตั้งค่า')
  +`<div class="row"><label class="card"><span>น้ำมันเริ่มต้น</span><select class="sm" data-k="vf">${opts(FT,S.V.vf||'Gasohol95')}</select></label><label class="card"><span>โหมดเติม</span><select class="sm" data-k="vm">${opts([['amount','ตามยอดเงิน'],['full','เต็มถัง']],S.V.vm||'amount')}</select></label></div>`
  +`<button class="btn" data-a="addveh">เพิ่มรถ</button>`}
 
+const WD=['อา','จ','อ','พ','พฤ','ศ','ส'],be=()=>D().settings.year_format==='BE';
+const curVid=()=>(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id;
+function vCal(){const vid=curVid();if(!vid)return hd('ปฏิทิน')+'<p class="m">ยังไม่มีรถ</p>';
+ const cm=S.cm||(S.cm=iso().slice(0,7)),[y,m]=cm.split('-').map(Number),first=new Date(y,m-1,1).getDay(),dim=new Date(y,m,0).getDate();
+ const E=ents(vid).filter(e=>e.date.startsWith(cm)),by={};E.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
+ const tot=E.reduce((s,e)=>s+(e.amount||0),0),td=iso();let cells=WD.map(w=>`<div class="h">${w}</div>`).join('');
+ for(let i=0;i<first;i++)cells+='<i></i>';
+ for(let d=1;d<=dim;d++){const ds=cm+'-'+String(d).padStart(2,'0'),L=by[ds]||[],a=L.reduce((s,e)=>s+(e.amount||0),0);
+  cells+=`<button class="cd${ds===td?' td':''}${ds===S.cd?' on':''}" data-a="cday" data-v="${ds}"><b>${d}</b>${L.length?`<small>${a>=1000?(a/1000).toFixed(1)+'k':Math.round(a)}</small>`:''}</button>`}
+ const sd=S.cd&&S.cd.startsWith(cm)?S.cd:'',DL=sd?(by[sd]||[]):[];
+ const panel=sd?`<p class="m">${fd(sd)}</p>`+(DL.length?DL.map(e=>`<div class="r"><div><b>${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${e.odometer!=null?'ไมล์ '+fmt(e.odometer):''}${e.type==='fuel'?' · '+fmt(e.liters,2)+' ล.':''}</div></div><b>${e.amount!=null?fmt(e.amount,2):'–'}</b><button class="lk" data-a="edit" data-v="${e.id}">แก้</button></div>`).join(''):'<p class="m">ไม่มีรายการ</p>')+`<button class="btn" data-a="addday" data-v="${sd}">+ เพิ่มรายการวันที่ ${fd(sd)}</button>`:'<p class="m">แตะวันที่เพื่อดู/เพิ่มรายการ</p>';
+ return hd('ปฏิทิน')+vchips(vid)+`<div class="row" style="justify-content:space-between"><button class="chip" data-a="cmo" data-v="-1" aria-label="เดือนก่อน">‹</button><b>${MON[m-1]} ${be()?y+543:y}</b><button class="chip" data-a="cmo" data-v="0">วันนี้</button><button class="chip" data-a="cmo" data-v="1" aria-label="เดือนถัดไป">›</button></div>`
+ +`<div class="calc"><span>${E.length} รายการ</span><b>฿${fmt(tot,2)}</b></div><div class="cal">${cells}</div>`+panel}
+
+function stats(vid,st){const A=ents(vid),P=A.filter(e=>e.date>=st),F=A.filter(e=>e.type==='fuel'),tank=(veh(vid)||{}).tank_liters||0;
+ const tot=P.reduce((s,e)=>s+(e.amount||0),0),fuelT=P.filter(e=>e.type==='fuel').reduce((s,e)=>s+(e.amount||0),0);
+ const O=A.filter(e=>e.odometer!=null&&!e.review),inP=O.filter(e=>e.date>=st),base=[...O].reverse().find(e=>e.date<st);
+ const dist=inP.length?inP[inP.length-1].odometer-(base?base.odometer:inP[0].odometer):null;
+ const seg=[];let lf=null,ls=0;
+ F.filter(e=>e.odometer!=null&&!e.review&&e.liters).forEach(e=>{if(lf){ls+=e.liters;if(e.full_tank)seg.push({d:e.date,km:e.odometer-lf.odometer,l:ls})}if(e.full_tank){lf=e;ls=0}});
+ const sa=seg.filter(x=>x.d>=st&&x.km>0),la=sa.reduce((s,x)=>s+x.l,0),ka=sa.reduce((s,x)=>s+x.km,0);
+ const fp=F.filter(e=>e.date>=st&&e.odometer!=null&&!e.review&&e.liters),lb=fp.slice(1).reduce((s,e)=>s+e.liters,0),kb=fp.length>1?fp[fp.length-1].odometer-fp[0].odometer:0;
+ let kl=null,kt='';if(sa.length&&la>=tank){kl=ka/la;kt='แม่นยำ (เต็มถัง)'}else if(fp.length>=3&&kb>0&&lb>=1.5*tank){kl=kb/lb;kt='ประมาณ'}
+ const fl=P.filter(e=>e.type==='fuel'&&e.liters&&e.amount),ap=fl.length?fl.reduce((s,e)=>s+e.amount,0)/fl.reduce((s,e)=>s+e.liters,0):null;
+ return{P,tot,fuelT,dist,kl,kt,ap,nf:P.filter(e=>e.type==='fuel').length}}
+function spark(vid,st){const F=ents(vid).filter(e=>e.type==='fuel'&&e.fuel_price&&e.date>=st);if(F.length<2)return'';
+ const c={};F.forEach(e=>c[e.fuel_type]=(c[e.fuel_type]||0)+1);const ft=Object.keys(c).sort((a,b)=>c[b]-c[a])[0],L=F.filter(e=>e.fuel_type===ft).slice(-40),p=L.map(e=>e.fuel_price);if(p.length<2)return'';
+ const mn=Math.min(...p),mx=Math.max(...p),r=mx-mn||1,pts=p.map((v,i)=>`${(i/(p.length-1)*296+2).toFixed(1)},${(56-(v-mn)/r*52).toFixed(1)}`).join(' ');
+ return`<div class="card" style="margin:8px 0"><span>ราคา/ลิตร · ${esc(ft)}<i>${fd(L[0].date)} – ${fd(L[L.length-1].date)}</i></span><svg viewBox="0 0 300 60" style="width:100%;height:64px" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg><div class="m">ต่ำสุด ${fmt(mn,2)} · เฉลี่ย ${fmt(p.reduce((a,b)=>a+b,0)/p.length,2)} · สูงสุด ${fmt(mx,2)} · ล่าสุด ${fmt(p[p.length-1],2)}</div></div>`}
+function trend(vid){const A=ents(vid),n=new Date(),ms=[];for(let i=11;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i,1);ms.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))}
+ const t=ms.map(k=>A.filter(e=>e.date.startsWith(k)).reduce((s,e)=>s+(e.amount||0),0)),mx=Math.max(...t,1);
+ return`<div class="card" style="margin:8px 0"><span>ค่าใช้จ่ายรายเดือน (12 เดือน)</span><div class="tr">${t.map((v,i)=>`<div><div style="height:${Math.round(v/mx*80)}px"></div><small>${MON[+ms[i].slice(5)-1].replace('.','')}</small></div>`).join('')}</div></div>`}
+function vSum(){const vid=curVid();if(!vid)return hd('สรุป')+'<p class="m">ยังไม่มีรถ</p>';
+ const t=iso(),[y,m]=t.split('-').map(Number),p=S.sp||'m',st=p==='m'?t.slice(0,8)+'01':p==='3'?iso(new Date(y,m-3,1)):p==='y'?y+'-01-01':'0000-01-01',s=stats(vid,st);
+ const mc=(l,v,u)=>`<div class="calc" style="flex:1;margin:0"><span>${l}</span><b>${v}</b>${u?`<span>${u}</span>`:''}</div>`;
+ const by={};s.P.forEach(e=>by[e.type]=(by[e.type]||0)+(e.amount||0));const tk=Object.keys(by).filter(k=>by[k]>0).sort((a,b)=>by[b]-by[a]),mx=by[tk[0]]||1;
+ return hd('สรุป')+vchips(vid)+`<div class="row sc">${[['m','เดือนนี้'],['3','3 เดือน'],['y','ปีนี้'],['a','ทั้งหมด']].map(x=>ch(x[1],'sp',x[0],p===x[0])).join('')}</div>`
+ +`<div class="row">${mc('ค่าใช้จ่ายรวม','฿'+fmt(s.tot),s.P.length+' รายการ')}${mc('ค่าน้ำมัน','฿'+fmt(s.fuelT),s.nf+' ครั้ง')}</div>`
+ +`<div class="row">${mc('ระยะทาง',s.dist!=null?fmt(s.dist)+' กม.':'–','')}${mc('บาท/กม.',s.dist>0?fmt(s.tot/s.dist,2):'–',s.dist>0&&s.fuelT?'ค่าน้ำมัน '+fmt(s.fuelT/s.dist,2):'')}</div>`
+ +`<div class="row">${mc('กม./ลิตร',s.kl?fmt(s.kl,1):'–',s.kt)}${mc('ราคาน้ำมันเฉลี่ย',s.ap?fmt(s.ap,2):'–','บาท/ลิตร')}</div>`
+ +`<div class="card" style="margin:8px 0"><span>แยกตามประเภท</span>${tk.map(k=>`<div class="br"><span>${tl(k)}</span><div><u style="width:${by[k]/mx*100}%"></u></div><b>${fmt(by[k])}</b></div>`).join('')||'<div class="m">ไม่มีรายการ</div>'}</div>`
+ +spark(vid,st)+trend(vid)+'<p class="m">ระยะทางและกม./ลิตร ไม่นับรายการที่ติดธง ⚠</p>'}
 function render(){th();const a=$('#app');
  if(!S.cfg.token){a.innerHTML=vPair();return}
  if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
- a.innerHTML=(S.tab==='add'?vAdd():S.tab==='list'?vList():vSet())+bar();if(S.tab==='add')gps()}
+ a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();if(S.tab==='add')gps()}
 
 // ----- ตำแหน่ง: ใช้ชื่อปั๊มจากรายการเก่าที่อยู่ในรัศมี 150 ม. -----
 function gps(){if(S.gps||!navigator.geolocation||D().settings.auto_gps===false)return;S.gps=1;
@@ -197,6 +244,10 @@ function addveh(){const n=(S.V.vn||'').trim();if(!n||!S.data)return toast(n?'ย
 
 function act(a,v){const F=S.F;
  if(a==='tab')S.tab=v;
+ else if(a==='cday')S.cd=v;
+ else if(a==='sp')S.sp=v;
+ else if(a==='cmo'){if(v==='0'){S.cm=iso().slice(0,7);S.cd=iso()}else{const[y,m]=S.cm.split('-').map(Number),d=new Date(y,m-1+Number(v),1);S.cm=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}}
+ else if(a==='addday'){S.F=newF(S.F.vid);S.F.date=v;S.tab='add'}
  else if(a==='veh'){L.lv=v;S.F=newF(v);S.gps=0}
  else if(a==='type')F.type=v;
  else if(a==='date')F.date=iso(v==='t'?new Date():new Date(Date.now()-864e5));
