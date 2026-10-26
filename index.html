@@ -46,7 +46,7 @@ h1{font-size:20px;margin:6px 0}
 .cd{height:52px;border:1px solid var(--b);border-radius:10px;background:var(--s);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;padding:0}
 .cd small{font-size:11px;color:var(--p);font-weight:600}.cd.td{border-color:var(--p)}.cd.on{background:var(--p);color:var(--op)}.cd.on small{color:var(--op)}
 .br{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}.br span{width:92px;display:block;font-size:14px;color:var(--t)}.br>div{flex:1;background:var(--so);border-radius:6px;height:14px}.br u{display:block;height:14px;border-radius:6px;background:var(--p)}.br b{width:66px;text-align:right}
-.tr{display:flex;gap:4px;align-items:flex-end;height:108px}.tr>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px}.tr>div>div{width:100%;background:var(--p);border-radius:4px 4px 0 0;min-height:2px}.tr small{font-size:11px;color:var(--m)}
+.tr{display:flex;gap:4px;align-items:flex-end;height:128px}.tr small.v{color:var(--t);font-weight:600}.tr>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px}.tr>div>div{width:100%;background:var(--p);border-radius:4px 4px 0 0;min-height:2px}.tr small{font-size:11px;color:var(--m)}
 </style>
 </head>
 <body>
@@ -137,7 +137,7 @@ function vAdd(){const F=S.F;if(!F)return hd('บันทึก')+'<p class="m">
  const hint=pv?`ครั้งก่อน ${pv.odometer!=null?fmt(pv.odometer)+' · ':''}${days(pv.date,F.date)} วันที่แล้ว`:'';
  const fts=D().settings.fuel_types?String(D().settings.fuel_types).split(','):FT;
  const items=[...new Set(D().entries.map(e=>e.item).filter(Boolean))];
- return hd(F.id?'แก้ไขรายการ':'บันทึก')+vchips(F.vid)+insBanner(F.vid)+vstrip(V,F.vid)
+ return hd((F.id?'แก้ไข':'บันทึก')+' · '+tl(F.type))+vchips(F.vid)+insBanner(F.vid)+vstrip(V,F.vid)
  +`<div class="row sc">${TY.map(t=>ch(t[1],'type',t[0],t[0]===F.type)).join('')}</div>`
  +`<div class="row sc">${ch('วันนี้','date','t',F.date===iso())}${ch('เมื่อวาน','date','y',F.date===iso(new Date(Date.now()-864e5)))}<input type="date" class="chip" data-k="date" value="${F.date}" aria-label="เลือกวันที่"></div>`
  +`<div class="row"><label class="card"><span>${no?'เลขไมล์ (ไม่บังคับ)':'เลขไมล์ (กม.)'}<i>${hint}</i></span><input data-k="odo" inputmode="numeric" value="${F.odo}"></label></div>`
@@ -149,7 +149,7 @@ function vAdd(){const F=S.F;if(!F)return hd('บันทึก')+'<p class="m">
   :`<div class="row"><label class="card"><span>รายการย่อย</span><input class="sm" data-k="item" list="il" value="${esc(F.item)}"></label></div><datalist id="il">${items.map(i=>`<option value="${esc(i)}">`).join('')}</datalist>`)
  +`<div class="row"><label class="card"><span>สถานที่</span><input class="sm" data-k="place" value="${esc(F.place)}"></label></div>`
  +`<div class="row"><label class="card"><span>หมายเหตุ</span><input class="sm" data-k="note" value="${esc(F.note)}"></label></div>`
- +`<button class="btn" data-a="save">${F.id?'บันทึกการแก้ไข':'บันทึก'}</button>`+(F.id?'<button class="lk" data-a="cancel">ยกเลิกการแก้ไข</button>':'')}
+ +`<button class="btn" data-a="save">${F.id?'บันทึกการแก้ไข':'บันทึก · '+tl(F.type)}</button>`+(F.id?'<button class="lk" data-a="cancel">ยกเลิกการแก้ไข</button>':'')}
 
 function vList(){const vid=(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id,all=derive(ents(vid)).reverse(),ym=iso().slice(0,7),mo=all.filter(e=>e.date.startsWith(ym));
  const rowsH=all.slice(0,150).map(e=>`<div class="r"><div><b>${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${fd(e.date)}${e.odometer!=null?' · ไมล์ '+fmt(e.odometer):''}${e.dk!=null?' (+'+fmt(e.dk)+' กม.)':''}${e.dd!=null?' · '+e.dd+' วัน':''}</div>`
@@ -199,7 +199,7 @@ function spark(vid,st){const F=ents(vid).filter(e=>e.type==='fuel'&&e.fuel_price
  return`<div class="card" style="margin:8px 0"><span>ราคา/ลิตร · ${esc(ft)}<i>${fd(L[0].date)} – ${fd(L[L.length-1].date)}</i></span><svg viewBox="0 0 300 60" style="width:100%;height:64px" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg><div class="m">ต่ำสุด ${fmt(mn,2)} · เฉลี่ย ${fmt(p.reduce((a,b)=>a+b,0)/p.length,2)} · สูงสุด ${fmt(mx,2)} · ล่าสุด ${fmt(p[p.length-1],2)}</div></div>`}
 function trend(vid){const A=ents(vid),n=new Date(),ms=[];for(let i=11;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i,1);ms.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))}
  const t=ms.map(k=>A.filter(e=>e.date.startsWith(k)).reduce((s,e)=>s+(e.amount||0),0)),mx=Math.max(...t,1);
- return`<div class="card" style="margin:8px 0"><span>ค่าใช้จ่ายรายเดือน (12 เดือน)</span><div class="tr">${t.map((v,i)=>`<div><div style="height:${Math.round(v/mx*80)}px"></div><small>${MON[+ms[i].slice(5)-1].replace('.','')}</small></div>`).join('')}</div></div>`}
+ return`<div class="card" style="margin:8px 0"><span>ค่าใช้จ่ายรายเดือน (12 เดือน)</span><div class="tr">${t.map((v,i)=>`<div>${v?`<small class="v">${v>=1e4?(v/1e3).toFixed(1)+'k':fmt(v)}</small>`:''}<div style="height:${Math.round(v/mx*80)}px"></div><small>${MON[+ms[i].slice(5)-1].replace('.','')}</small></div>`).join('')}</div></div>`}
 function vSum(){const vid=curVid();if(!vid)return hd('สรุป')+'<p class="m">ยังไม่มีรถ</p>';
  const t=iso(),[y,m]=t.split('-').map(Number),p=S.sp||'m',st=p==='m'?t.slice(0,8)+'01':p==='3'?iso(new Date(y,m-3,1)):p==='y'?y+'-01-01':'0000-01-01',s=stats(vid,st);
  const mc=(l,v,u)=>`<div class="calc" style="flex:1;margin:0"><span>${l}</span><b>${v}</b>${u?`<span>${u}</span>`:''}</div>`;
@@ -213,7 +213,7 @@ function vSum(){const vid=curVid();if(!vid)return hd('สรุป')+'<p class="
 function render(){th();const a=$('#app');
  if(!S.cfg.token){a.innerHTML=vPair();return}
  if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
- a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();if(S.tab==='add')gps()}
+ a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();document.querySelectorAll('.sc').forEach(c=>{const o=c.querySelector('.on');if(o)c.scrollLeft=o.offsetLeft-c.offsetLeft-(c.clientWidth-o.offsetWidth)/2});if(S.tab==='add')gps()}
 
 // ----- ตำแหน่ง: ใช้ชื่อปั๊มจากรายการเก่าที่อยู่ในรัศมี 150 ม. -----
 function gps(){if(S.gps||!navigator.geolocation||D().settings.auto_gps===false)return;S.gps=1;
