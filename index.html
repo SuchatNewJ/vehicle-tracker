@@ -54,7 +54,7 @@ h1{font-size:20px;margin:6px 0}
 <script>
 const API=''; // ← วาง Apps Script Web App URL ที่นี่
 const L=localStorage,J=JSON,$=s=>document.querySelector(s);
-const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',R:{},ok:0};
+const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',R:{},M:null,ok:0};
 const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
 const NO=['installment','insurance','registration'],FT=['Gasohol95','Gasohol91','E20','E85','B7','Super Power'];
 const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -162,11 +162,11 @@ function vSet(){const d=D();return hd('ตั้งค่า')
  +`<div class="card"><span>โปรไฟล์ <i>รอส่ง ${S.q.length} รายการ</i></span><b>${esc(d.profile.name||'-')}</b><span>${S.ok?'ซิงก์แล้ว':'ออฟไลน์ '+esc(S.err)}</span></div>`
  +`<div class="row"><button class="chip" data-a="sync">ซิงก์ใหม่</button><button class="chip" data-a="out">ออกจากโปรไฟล์</button></div>`
  +`<p class="m">ธีม</p><div class="row">${[['auto','ตามระบบ'],['light','สว่าง'],['dark','มืด']].map(x=>ch(x[1],'th',x[0],S.th===x[0])).join('')}</div>`
- +`<p class="m">รถ</p>`+d.vehicles.map(v=>`<div class="r">${pimg(v,'p')}<div><b>${esc(v.nickname)}</b>${v.plate?' · '+esc(v.plate):''}<div class="m">${esc(v.vehicle_kind||'')} · ถัง ${v.tank_liters||'–'} ล. · ${esc(v.default_fuel_type||'')}</div></div><button class="lk" data-a="copyv" data-v="${esc(v.vehicle_id)}">คัดลอกข้อมูล</button></div>`).join('')
- +`${insSec()}${recSec()}<p class="m">เพิ่มรถ</p><label class="card"><span>ชื่อรถ</span><input class="sm" data-k="vn" value="${esc(S.V.vn)}"></label>`
+ +`<p class="m">รถ</p>`+d.vehicles.map(v=>`<div class="r">${pimg(v,'p')}<div><b>${esc(v.nickname)}</b>${v.plate?' · '+esc(v.plate):''}<div class="m">${esc(v.vehicle_kind||'')} · ถัง ${v.tank_liters||'–'} ล. · ${esc(v.default_fuel_type||'')}</div><div class="row" style="margin:0"><button class="lk" data-a="copyv" data-v="${esc(v.vehicle_id)}">คัดลอกข้อมูล</button><button class="lk" data-a="editv" data-v="${esc(v.vehicle_id)}">แก้ไข</button><button class="lk" data-a="delv" data-v="${esc(v.vehicle_id)}">ลบ</button></div></div></div>`).join('')
+ +`${mergeSec()}${insSec()}${recSec()}<p class="m" id="vform">${S.V.id?'แก้ไขรถ':'เพิ่มรถ'}</p><label class="card"><span>ชื่อรถ</span><input class="sm" data-k="vn" value="${esc(S.V.vn)}"></label>`
  +`<div class="row"><label class="card"><span>ถัง (ลิตร)</span><input class="sm" data-k="vt" inputmode="decimal" value="${esc(S.V.vt)}"></label><label class="card"><span>ชนิดรถ</span><select class="sm" data-k="vk">${opts([['motorcycle','มอเตอร์ไซค์'],['pickup','กระบะ'],['car','รถยนต์']],S.V.vk||'motorcycle')}</select></label></div>`
  +`<div class="row"><label class="card"><span>น้ำมันเริ่มต้น</span><select class="sm" data-k="vf">${opts(FT,S.V.vf||'Gasohol95')}</select></label><label class="card"><span>โหมดเติม</span><select class="sm" data-k="vm">${opts([['amount','ตามยอดเงิน'],['full','เต็มถัง']],S.V.vm||'amount')}</select></label></div>`
- +`<button class="btn" data-a="addveh">เพิ่มรถ</button>`}
+ +`${vExtra()}<button class="btn" data-a="addveh">${S.V.id?'บันทึกการแก้ไขรถ':'เพิ่มรถ'}</button>${S.V.id?'<button class="lk" data-a="cancelv">ยกเลิกการแก้ไข</button>':''}`}
 
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'],be=()=>D().settings.year_format==='BE';
 const curVid=()=>(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id;
@@ -236,7 +236,7 @@ function addrec(){const R=S.R,vid=S.F&&S.F.vid;if(!vid||!S.data)return toast('�
 function render(){th();const a=$('#app');
  if(!S.cfg.token){a.innerHTML=vPair();return}
  if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
- a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();document.querySelectorAll('.sc').forEach(c=>{const o=c.querySelector('.on');if(o)c.scrollLeft=o.offsetLeft-c.offsetLeft-(c.clientWidth-o.offsetWidth)/2});if(S.tab==='add')gps()}
+ a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();document.querySelectorAll('.sc').forEach(c=>{const o=c.querySelector('.on');if(o)c.scrollLeft=o.offsetLeft-c.offsetLeft-(c.clientWidth-o.offsetWidth)/2});if(S.scr){S.scr=0;const el=$('#vform');if(el)el.scrollIntoView({block:'start'})}if(S.tab==='add')gps()}
 
 // ----- ตำแหน่ง: ใช้ชื่อปั๊มจากรายการเก่าที่อยู่ในรัศมี 150 ม. -----
 function gps(){if(S.gps||!navigator.geolocation||D().settings.auto_gps===false)return;S.gps=1;
@@ -261,9 +261,28 @@ function save(){const F=S.F,V=veh(F.vid);if(!V||!S.data)return toast('ยัง�
 
 async function pair(){const code=(S.p.pc||'').trim(),u=S.cfg.api||API||(S.p.au||'').trim();if(!code||!u)return toast('กรอกให้ครบ');
  S.cfg.api=u;try{S.cfg.token=code.length>10?code:(await api('claim',{code})).token;persist();await flush();render()}catch(x){S.cfg.token='';toast('ไม่สำเร็จ: '+x.message)}}
-function addveh(){const n=(S.V.vn||'').trim();if(!n||!S.data)return toast(n?'ยังไม่ได้ซิงก์':'ใส่ชื่อรถ');
- const v={vehicle_id:n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'v'+Date.now().toString(36),nickname:n,vehicle_kind:S.V.vk||'motorcycle',tank_liters:num(S.V.vt),default_fuel_type:S.V.vf||'Gasohol95',default_fill_mode:S.V.vm||'amount'};
- const A=D().vehicles,i=A.findIndex(x=>x.vehicle_id===v.vehicle_id);i<0?A.push(v):A[i]=v;S.q.push({a:'saveVehicle',p:v});S.V={};persist();flush();render()}
+function addveh(){const V=S.V,n=(V.vn||'').trim();if(!n||!S.data)return toast(n?'ยังไม่ได้ซิงก์':'ใส่ชื่อรถ');
+ const dup=D().vehicles.find(x=>String(x.nickname).trim().toLowerCase()===n.toLowerCase()&&x.vehicle_id!==V.id);
+ if(dup&&!confirm('มีรถชื่อ "'+n+'" อยู่แล้ว เพิ่มซ้ำอีกคัน?\n(ถ้าจะแก้ข้อมูลคันเดิม ให้กด "แก้ไข" ที่รถคันนั้น)'))return;
+ let id=V.id||n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'v'+Date.now().toString(36);
+ if(!V.id&&D().vehicles.some(x=>x.vehicle_id===id))id+='-'+rid().slice(0,3);
+ const v={vehicle_id:id,nickname:n,vehicle_kind:V.vk||'motorcycle',plate:V.vp||'',tank_liters:num(V.vt),default_fuel_type:V.vf||'Gasohol95',default_fill_mode:V.vm||'amount',quick_amounts:(V.vq||'').trim(),default_amount:num(V.vd)};
+ const A=D().vehicles,i=A.findIndex(x=>x.vehicle_id===id);i<0?A.push(v):A[i]={...A[i],...v};S.q.push({a:'saveVehicle',p:v});S.V={};persist();flush();render()}
+const vExtra=()=>`<div class="row"><label class="card"><span>ทะเบียน</span><input class="sm" data-k="vp" value="${esc(S.V.vp)}"></label><label class="card"><span>ยอดเริ่มต้น (บาท)</span><input class="sm" data-k="vd" inputmode="decimal" value="${esc(S.V.vd)}"></label></div><label class="card"><span>ปุ่มยอดด่วน (คั่นด้วยเว้นวรรค)</span><input class="sm" data-k="vq" value="${esc(S.V.vq)}"></label>`;
+const cnt=id=>ents(id).length+(D().insurance||[]).filter(x=>x.vehicle_id===id).length+(D().recurring||[]).filter(x=>x.vehicle_id===id).length;
+function mergeSec(){const M=S.M,f=M&&veh(M.from);if(!f)return'';const n=cnt(M.from),o=D().vehicles.filter(v=>v.vehicle_id!==M.from);
+ return`<div class="calc"><b style="font-size:15px">ลบรถ "${esc(f.nickname)}"</b><span>${n?'มี '+n+' รายการ (รวมกรมธรรม์/รายการประจำ) — ต้องย้ายไปรวมกับรถคันอื่นก่อน':'ไม่มีรายการ ลบได้เลย'}</span>`
+ +(n?(o.length?`<label class="card" style="margin-top:8px"><span>ย้ายไปที่</span><select class="sm" data-k="mt">${opts([['','— เลือกรถ —']].concat(o.map(v=>[v.vehicle_id,esc(v.nickname)])),M.to||'')}</select></label>`:'<span>ไม่มีรถคันอื่นให้ย้าย</span>'):'')
+ +`<div class="row"><button class="chip on" data-a="delok">${n?'ย้ายและลบ':'ลบรถ'}</button><button class="chip" data-a="delno">ยกเลิก</button></div></div>`}
+function delok(){const M=S.M;if(!M||!S.data)return;const n=cnt(M.from);
+ if(n){if(!M.to)return toast('เลือกรถที่จะย้ายไป');
+  D().entries.forEach(e=>{if(e.vehicle_id===M.from)e.vehicle_id=M.to});
+  (D().insurance||[]).forEach(x=>{if(x.vehicle_id===M.from)x.vehicle_id=M.to});
+  (D().recurring||[]).forEach(x=>{if(x.vehicle_id===M.from)x.vehicle_id=M.to});
+  S.q.push({a:'moveEntries',p:{from:M.from,to:M.to}})}
+ S.data.vehicles=D().vehicles.filter(v=>v.vehicle_id!==M.from);S.q.push({a:'deleteVehicle',p:{vehicle_id:M.from}});
+ if(S.F&&S.F.vid===M.from)S.F=S.data.vehicles.length?newF(M.to||S.data.vehicles[0].vehicle_id):null;
+ S.M=null;persist();toast('ลบรถแล้ว');flush()}
 
 function act(a,v){const F=S.F;
  if(a==='tab')S.tab=v;
@@ -274,6 +293,11 @@ function act(a,v){const F=S.F;
  else if(a==='recpay'){const[id,n]=v.split('|'),r=(D().recurring||[]).find(x=>x.rec_id===id);if(!r)return;const e=mkRec(r,n,iso());D().entries.push(e);S.q.push({a:'addEntry',p:e});persist();toast('บันทึกงวดที่ '+n+' แล้ว ✓');flush()}
  else if(a==='recedit'){const[id,n]=v.split('|'),r=(D().recurring||[]).find(x=>x.rec_id===id);if(!r)return;const du=dueN(r,n);S.F={...newF(r.vehicle_id),type:r.type||'installment',date:du<=iso()?du:iso(),amt:r.amount,item:mkRec(r,n,'').item,rec:r.rec_id};S.tab='add'}
  else if(a==='recoff'){const r=(D().recurring||[]).find(x=>x.rec_id===v);if(!r||!confirm('ปิดรายการประจำนี้?'))return;r.active=false;S.q.push({a:'saveRecurring',p:{rec_id:v,active:false}});persist();flush()}
+ else if(a==='editv'){const x=veh(v);S.V={id:x.vehicle_id,vn:x.nickname,vt:x.tank_liters==null?'':x.tank_liters,vk:x.vehicle_kind||'motorcycle',vf:x.default_fuel_type||'Gasohol95',vm:x.default_fill_mode||'amount',vp:x.plate||'',vd:x.default_amount==null?'':x.default_amount,vq:x.quick_amounts||''};S.scr=1}
+ else if(a==='cancelv')S.V={};
+ else if(a==='delv')S.M={from:v,to:''};
+ else if(a==='delno')S.M=null;
+ else if(a==='delok')return delok();
  else if(a==='addrec')return addrec();
  else if(a==='veh'){L.lv=v;S.F=newF(v);S.gps=0}
  else if(a==='type')F.type=v;
@@ -297,7 +321,7 @@ function act(a,v){const F=S.F;
 
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)act(b.dataset.a,b.dataset.v)});
 document.addEventListener('input',e=>{const k=e.target.dataset.k,v=e.target.value;if(!k)return;
- if(/^v[ntkfm]$/.test(k))S.V[k]=v;else if(/^i[kpcnse]$/.test(k))S.I[k]=v;else if(/^r[nadts]$/.test(k))S.R[k]=v;else if(k==='pc'||k==='au')S.p[k]=v;
+ if(/^v[ntkfmpqd]$/.test(k))S.V[k]=v;else if(/^i[kpcnse]$/.test(k))S.I[k]=v;else if(/^r[nadts]$/.test(k))S.R[k]=v;else if(k==='mt'&&S.M)S.M.to=v;else if(k==='pc'||k==='au')S.p[k]=v;
  else if(S.F){S.F[k]=v;if(k==='amt'||k==='price'){const el=$('[data-k=lt]');if(el)el.placeholder=calc().l==null?'':calc().l}}});
 
 if(location.hash.indexOf('#join=')===0){S.p.pc=location.hash.slice(6);history.replaceState(null,'',location.pathname+location.search)}
