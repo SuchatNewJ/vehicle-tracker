@@ -54,14 +54,14 @@ h1{font-size:20px;margin:6px 0}
 <script>
 const API=''; // ← วาง Apps Script Web App URL ที่นี่
 const L=localStorage,J=JSON,$=s=>document.querySelector(s);
-const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',ok:0};
+const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',R:{},ok:0};
 const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
 const NO=['installment','insurance','registration'],FT=['Gasohol95','Gasohol91','E20','E85','B7','Super Power'];
 const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const IC={cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',sum:'<path d="M5 20V10M12 20V4M19 20v-7"/>',add:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=(d=new Date())=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-const D=()=>S.data||{vehicles:[],entries:[],insurance:[],settings:{},profile:{}};
+const D=()=>S.data||{vehicles:[],entries:[],insurance:[],recurring:[],settings:{},profile:{}};
 const fd=s=>{const[y,m,d]=s.split('-');return +d+' '+MON[m-1]+' '+(D().settings.year_format==='BE'?+y+543:y)};
 const num=v=>v===''||v==null?null:+String(v).replace(/,/g,'');
 const fmt=(n,d=0)=>n==null?'–':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -137,7 +137,7 @@ function vAdd(){const F=S.F;if(!F)return hd('บันทึก')+'<p class="m">
  const hint=pv?`ครั้งก่อน ${pv.odometer!=null?fmt(pv.odometer)+' · ':''}${days(pv.date,F.date)} วันที่แล้ว`:'';
  const fts=D().settings.fuel_types?String(D().settings.fuel_types).split(','):FT;
  const items=[...new Set(D().entries.map(e=>e.item).filter(Boolean))];
- return hd((F.id?'แก้ไข':'บันทึก')+' · '+tl(F.type))+vchips(F.vid)+insBanner(F.vid)+vstrip(V,F.vid)
+ return hd((F.id?'แก้ไข':'บันทึก')+' · '+tl(F.type))+vchips(F.vid)+insBanner(F.vid)+recBanner(F.vid)+vstrip(V,F.vid)
  +`<div class="row sc">${TY.map(t=>ch(t[1],'type',t[0],t[0]===F.type)).join('')}</div>`
  +`<div class="row sc">${ch('วันนี้','date','t',F.date===iso())}${ch('เมื่อวาน','date','y',F.date===iso(new Date(Date.now()-864e5)))}<input type="date" class="chip" data-k="date" value="${F.date}" aria-label="เลือกวันที่"></div>`
  +`<div class="row"><label class="card"><span>${no?'เลขไมล์ (ไม่บังคับ)':'เลขไมล์ (กม.)'}<i>${hint}</i></span><input data-k="odo" inputmode="numeric" value="${F.odo}"></label></div>`
@@ -163,7 +163,7 @@ function vSet(){const d=D();return hd('ตั้งค่า')
  +`<div class="row"><button class="chip" data-a="sync">ซิงก์ใหม่</button><button class="chip" data-a="out">ออกจากโปรไฟล์</button></div>`
  +`<p class="m">ธีม</p><div class="row">${[['auto','ตามระบบ'],['light','สว่าง'],['dark','มืด']].map(x=>ch(x[1],'th',x[0],S.th===x[0])).join('')}</div>`
  +`<p class="m">รถ</p>`+d.vehicles.map(v=>`<div class="r">${pimg(v,'p')}<div><b>${esc(v.nickname)}</b>${v.plate?' · '+esc(v.plate):''}<div class="m">${esc(v.vehicle_kind||'')} · ถัง ${v.tank_liters||'–'} ล. · ${esc(v.default_fuel_type||'')}</div></div><button class="lk" data-a="copyv" data-v="${esc(v.vehicle_id)}">คัดลอกข้อมูล</button></div>`).join('')
- +`${insSec()}<p class="m">เพิ่มรถ</p><label class="card"><span>ชื่อรถ</span><input class="sm" data-k="vn" value="${esc(S.V.vn)}"></label>`
+ +`${insSec()}${recSec()}<p class="m">เพิ่มรถ</p><label class="card"><span>ชื่อรถ</span><input class="sm" data-k="vn" value="${esc(S.V.vn)}"></label>`
  +`<div class="row"><label class="card"><span>ถัง (ลิตร)</span><input class="sm" data-k="vt" inputmode="decimal" value="${esc(S.V.vt)}"></label><label class="card"><span>ชนิดรถ</span><select class="sm" data-k="vk">${opts([['motorcycle','มอเตอร์ไซค์'],['pickup','กระบะ'],['car','รถยนต์']],S.V.vk||'motorcycle')}</select></label></div>`
  +`<div class="row"><label class="card"><span>น้ำมันเริ่มต้น</span><select class="sm" data-k="vf">${opts(FT,S.V.vf||'Gasohol95')}</select></label><label class="card"><span>โหมดเติม</span><select class="sm" data-k="vm">${opts([['amount','ตามยอดเงิน'],['full','เต็มถัง']],S.V.vm||'amount')}</select></label></div>`
  +`<button class="btn" data-a="addveh">เพิ่มรถ</button>`}
@@ -210,6 +210,29 @@ function vSum(){const vid=curVid();if(!vid)return hd('สรุป')+'<p class="
  +`<div class="row">${mc('กม./ลิตร',s.kl?fmt(s.kl,1):'–',s.kt)}${mc('ราคาน้ำมันเฉลี่ย',s.ap?fmt(s.ap,2):'–','บาท/ลิตร')}</div>`
  +`<div class="card" style="margin:8px 0"><span>แยกตามประเภท</span>${tk.map(k=>`<div class="br"><span>${tl(k)}</span><div><u style="width:${by[k]/mx*100}%"></u></div><b>${fmt(by[k])}</b></div>`).join('')||'<div class="m">ไม่มีรายการ</div>'}</div>`
  +spark(vid,st)+trend(vid)+'<p class="m">ระยะทางและกม./ลิตร ไม่นับรายการที่ติดธง ⚠</p>'}
+const rid=()=>[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const nOf=e=>{const m=String((e.item||'')+' '+(e.note||'')).match(/งวด\D*(\d+)/);return m?+m[1]:null};
+const dueOf=(r,y,m)=>y+'-'+String(m).padStart(2,'0')+'-'+String(Math.min(+r.day_of_month||1,new Date(y,m,0).getDate())).padStart(2,'0');
+const dueN=(r,n)=>{const[sy,sm]=String(r.start_month).split('-').map(Number),d=new Date(sy,sm-1+(n-1),1);return dueOf(r,d.getFullYear(),d.getMonth()+1)};
+function recDue(vid){const t=iso(),[y,m]=t.split('-').map(Number),out=[];
+ (D().recurring||[]).filter(r=>r.vehicle_id===vid&&r.active!==false&&r.start_month).forEach(r=>{const[sy,sm]=String(r.start_month).split('-').map(Number);
+  [0,1].forEach(k=>{const d=new Date(y,m-1+k,1),yy=d.getFullYear(),mm=d.getMonth()+1,n=(yy-sy)*12+(mm-sm)+1;
+   if(n<1||(r.total_count&&n>r.total_count))return;
+   const du=dueOf(r,yy,mm),dd=days(t,du);if(dd>3)return;
+   const paid=ents(vid).some(e=>e.type===(r.type||'installment')&&(nOf(e)===n||(days(du,e.date)>=-9&&days(du,e.date)<=18)));
+   if(!paid)out.push({r,n,due:du,dd})})});
+ return out}
+const recBanner=vid=>recDue(vid).map(x=>`<div class="calc"><b style="font-size:15px">${esc(x.r.item||'รายการประจำ')} งวดที่ ${x.n}${x.r.total_count?'/'+x.r.total_count:''} · ฿${fmt(x.r.amount)}</b><span>${x.dd<0?'เลยกำหนด '+(-x.dd)+' วัน':x.dd===0?'ครบกำหนดวันนี้':'อีก '+x.dd+' วันถึงกำหนด'} (${fd(x.due)})</span><div class="row"><button class="chip on" data-a="recpay" data-v="${x.r.rec_id}|${x.n}">จ่ายแล้ว</button><button class="chip" data-a="recedit" data-v="${x.r.rec_id}|${x.n}">เลือกวันที่</button></div></div>`).join('');
+function mkRec(r,n,date){const now=new Date().toISOString();
+ return{id:rid(),vehicle_id:r.vehicle_id,date,type:r.type||'installment',odometer:null,item:(r.item||'งวด')+' งวดที่ '+n+(r.total_count?'/'+r.total_count:''),amount:r.amount,amount_estimated:false,note:'',place_name:'',lat:null,lng:null,fuel_type:'',fuel_price:null,liters:null,full_tank:false,created_at:now,updated_at:now,deleted:false,review:'',rec_id:r.rec_id}}
+function recSec(){const vid=S.F&&S.F.vid;if(!vid)return'';const R=S.R,list=(D().recurring||[]).filter(r=>r.vehicle_id===vid&&r.active!==false);
+ return`<p class="m">รายการประจำรายเดือน (ค่างวด ฯลฯ) — ${esc((veh(vid)||{}).nickname)}</p>`+list.map(r=>`<div class="r"><div><b>${esc(r.item||'')}</b> · ฿${fmt(r.amount)}<div class="m">ทุกวันที่ ${r.day_of_month} · งวดที่ 1 = ${esc(r.start_month)}${r.total_count?' · ทั้งหมด '+r.total_count+' งวด':''}</div></div><button class="lk" data-a="recoff" data-v="${r.rec_id}">ปิด</button></div>`).join('')
+ +`<div class="row"><label class="card"><span>ชื่อรายการ</span><input class="sm" data-k="rn" value="${esc(R.rn||'ค่างวดรถ')}"></label><label class="card"><span>ยอด (บาท)</span><input class="sm" data-k="ra" inputmode="decimal" value="${esc(R.ra)}"></label></div>`
+ +`<div class="row"><label class="card"><span>ครบกำหนดวันที่</span><input class="sm" data-k="rd" inputmode="numeric" value="${esc(R.rd||'1')}"></label><label class="card"><span>จำนวนงวดทั้งหมด</span><input class="sm" data-k="rt" inputmode="numeric" value="${esc(R.rt)}"></label></div>`
+ +`<label class="card"><span>เดือนของงวดที่ 1</span><input class="sm" type="month" data-k="rs" value="${esc(R.rs)}"></label><button class="btn" data-a="addrec">บันทึกรายการประจำ</button>`}
+function addrec(){const R=S.R,vid=S.F&&S.F.vid;if(!vid||!S.data)return toast('ยังไม่ได้ซิงก์');if(!num(R.ra)||!R.rs)return toast('ใส่ยอดและเดือนของงวดที่ 1');
+ const r={rec_id:rid(),vehicle_id:vid,type:'installment',item:R.rn||'ค่างวดรถ',amount:num(R.ra),day_of_month:num(R.rd)||1,start_month:R.rs,total_count:num(R.rt),active:true};
+ (S.data.recurring=S.data.recurring||[]).push(r);S.q.push({a:'saveRecurring',p:r});S.R={};persist();flush();render()}
 function render(){th();const a=$('#app');
  if(!S.cfg.token){a.innerHTML=vPair();return}
  if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
@@ -232,7 +255,7 @@ function save(){const F=S.F,V=veh(F.vid);if(!V||!S.data)return toast('ยัง�
  if(isF&&c.l&&V.tank_liters&&c.l>V.tank_liters*1.05&&!confirm(`ลิตร ${c.l} เกินความจุถัง ${V.tank_liters} ลิตร ยืนยัน?`))return;
  const now=new Date().toISOString(),old=F.id&&D().entries.find(e=>e.id===F.id);
  const e={id:F.id||[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join(''),vehicle_id:F.vid,date:F.date,type:F.type,odometer:o,item:F.item||'',amount:c.a,amount_estimated:false,note:F.note||'',place_name:F.place||'',lat:F.lat,lng:F.lng,
-  fuel_type:isF?F.ft:'',fuel_price:isF?num(F.price):null,liters:isF?c.l:null,full_tank:isF?!!F.full:false,created_at:old?old.created_at:now,updated_at:now,deleted:false,review:''};
+  fuel_type:isF?F.ft:'',fuel_price:isF?num(F.price):null,liters:isF?c.l:null,full_tank:isF?!!F.full:false,created_at:old?old.created_at:now,updated_at:now,deleted:false,review:'',rec_id:F.rec||(old&&old.rec_id)||''};
  const E=D().entries,i=E.findIndex(x=>x.id===e.id);i<0?E.push(e):E[i]=e;
  S.q.push({a:old?'updateEntry':'addEntry',p:e});persist();toast('บันทึกแล้ว ✓');S.F=newF(F.vid);S.gps=0;flush();render()}
 
@@ -248,6 +271,10 @@ function act(a,v){const F=S.F;
  else if(a==='sp')S.sp=v;
  else if(a==='cmo'){if(v==='0'){S.cm=iso().slice(0,7);S.cd=iso()}else{const[y,m]=S.cm.split('-').map(Number),d=new Date(y,m-1+Number(v),1);S.cm=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}}
  else if(a==='addday'){S.F=newF(S.F.vid);S.F.date=v;S.tab='add'}
+ else if(a==='recpay'){const[id,n]=v.split('|'),r=(D().recurring||[]).find(x=>x.rec_id===id);if(!r)return;const e=mkRec(r,n,iso());D().entries.push(e);S.q.push({a:'addEntry',p:e});persist();toast('บันทึกงวดที่ '+n+' แล้ว ✓');flush()}
+ else if(a==='recedit'){const[id,n]=v.split('|'),r=(D().recurring||[]).find(x=>x.rec_id===id);if(!r)return;const du=dueN(r,n);S.F={...newF(r.vehicle_id),type:r.type||'installment',date:du<=iso()?du:iso(),amt:r.amount,item:mkRec(r,n,'').item,rec:r.rec_id};S.tab='add'}
+ else if(a==='recoff'){const r=(D().recurring||[]).find(x=>x.rec_id===v);if(!r||!confirm('ปิดรายการประจำนี้?'))return;r.active=false;S.q.push({a:'saveRecurring',p:{rec_id:v,active:false}});persist();flush()}
+ else if(a==='addrec')return addrec();
  else if(a==='veh'){L.lv=v;S.F=newF(v);S.gps=0}
  else if(a==='type')F.type=v;
  else if(a==='date')F.date=iso(v==='t'?new Date():new Date(Date.now()-864e5));
@@ -270,7 +297,7 @@ function act(a,v){const F=S.F;
 
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)act(b.dataset.a,b.dataset.v)});
 document.addEventListener('input',e=>{const k=e.target.dataset.k,v=e.target.value;if(!k)return;
- if(/^v[ntkfm]$/.test(k))S.V[k]=v;else if(/^i[kpcnse]$/.test(k))S.I[k]=v;else if(k==='pc'||k==='au')S.p[k]=v;
+ if(/^v[ntkfm]$/.test(k))S.V[k]=v;else if(/^i[kpcnse]$/.test(k))S.I[k]=v;else if(/^r[nadts]$/.test(k))S.R[k]=v;else if(k==='pc'||k==='au')S.p[k]=v;
  else if(S.F){S.F[k]=v;if(k==='amt'||k==='price'){const el=$('[data-k=lt]');if(el)el.placeholder=calc().l==null?'':calc().l}}});
 
 if(location.hash.indexOf('#join=')===0){S.p.pc=location.hash.slice(6);history.replaceState(null,'',location.pathname+location.search)}
