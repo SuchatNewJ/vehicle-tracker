@@ -14,8 +14,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600&display=swap">
 <title>Vehicle Tracker</title>
 <style>
-:root{--bg:#F4F7F5;--s:#fff;--b:#DDE5E0;--t:#1F2A27;--m:#5E6F69;--p:#2F7F72;--op:#fff;--so:#E3F1ED;color-scheme:light}
-:root[data-d]{--bg:#121715;--s:#1B2320;--b:#2B3632;--t:#E6EEEA;--m:#9AAAA3;--p:#5CB8A6;--op:#0B1F1B;--so:#1F332E;color-scheme:dark}
+:root{--bg:#F4F7F5;--s:#fff;--b:#DDE5E0;--t:#1F2A27;--m:#5E6F69;--p:#2F7F72;--op:#fff;--so:#E3F1ED;--kt:#fff;--k-fuel:#2F7F72;--k-wash:#2B6CB0;--k-oil_change:#B45309;--k-maintenance:#6B46C1;--k-repair:#B83A3A;--k-inspection:#4A5568;--k-insurance:#A8327A;--k-registration:#5F7A1F;--k-installment:#8B5E34;--k-other:#5B6573;color-scheme:light}
+:root[data-d]{--bg:#121715;--s:#1B2320;--b:#2B3632;--t:#E6EEEA;--m:#9AAAA3;--p:#5CB8A6;--op:#0B1F1B;--so:#1F332E;--kt:#10151A;--k-fuel:#5CB8A6;--k-wash:#7BB0E8;--k-oil_change:#F0A35E;--k-maintenance:#B79AF0;--k-repair:#F08A8A;--k-inspection:#A0AEC0;--k-insurance:#E48BC3;--k-registration:#A9C660;--k-installment:#CBA37A;--k-other:#A0A8B3;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--t);font:16px/1.4 'Noto Sans Thai',system-ui,sans-serif;font-variant-numeric:tabular-nums}
 #app{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(110px + env(safe-area-inset-bottom))}
@@ -43,8 +43,12 @@ h1{font-size:20px;margin:6px 0}
 .bar button{flex:1;border:0;background:none;color:var(--m);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;min-height:48px}.bar .on{color:var(--p);font-weight:600}
 #toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--t);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:9}#toast.on{opacity:1}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}.cal i{display:block}.cal .h{text-align:center;font-size:12px;color:var(--m)}
-.cd{height:52px;border:1px solid var(--b);border-radius:10px;background:var(--s);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;padding:0}
-.cd small{font-size:11px;color:var(--p);font-weight:600}.cd.td{border-color:var(--p)}.cd.on{background:var(--p);color:var(--op)}.cd.on small{color:var(--op)}
+.cd{min-height:74px;border:1px solid var(--b);border-radius:10px;background:var(--s);display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;padding:3px;text-align:left}
+.cd b{font-size:12px;font-weight:600;padding-left:2px}.cd small{font-size:11px;color:var(--m);text-align:center}
+.cd.td{border-color:var(--p)}.cd.td b{color:var(--p)}.cd.on{background:var(--so);box-shadow:0 0 0 2px var(--p)}
+.pl{display:block;border-radius:5px;padding:0 2px;font-size:11px;line-height:16px;font-weight:600;color:var(--kt);text-align:center;white-space:nowrap;overflow:hidden}
+.lg{display:flex;flex-wrap:wrap;gap:6px 12px;margin:6px 0;font-size:12px;color:var(--m)}.lg span{display:inline-flex;align-items:center}
+.dt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .br{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}.br span{width:92px;display:block;font-size:14px;color:var(--t)}.br>div{flex:1;background:var(--so);border-radius:6px;height:14px}.br u{display:block;height:14px;border-radius:6px;background:var(--p)}.br b{width:66px;text-align:right}
 .tr{display:flex;gap:4px;align-items:flex-end;height:128px}.tr small.v{color:var(--t);font-weight:600}.tr>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px}.tr>div>div{width:100%;background:var(--p);border-radius:4px 4px 0 0;min-height:2px}.tr small{font-size:11px;color:var(--m)}
 </style>
@@ -152,7 +156,7 @@ function vAdd(){const F=S.F;if(!F)return hd('บันทึก')+'<p class="m">
  +`<button class="btn" data-a="save">${F.id?'บันทึกการแก้ไข':'บันทึก · '+tl(F.type)}</button>`+(F.id?'<button class="lk" data-a="cancel">ยกเลิกการแก้ไข</button>':'')}
 
 function vList(){const vid=(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id,all=derive(ents(vid)).reverse(),ym=iso().slice(0,7),mo=all.filter(e=>e.date.startsWith(ym));
- const rowsH=all.slice(0,150).map(e=>`<div class="r"><div><b>${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${fd(e.date)}${e.odometer!=null?' · ไมล์ '+fmt(e.odometer):''}${e.dk!=null?' (+'+fmt(e.dk)+' กม.)':''}${e.dd!=null?' · '+e.dd+' วัน':''}</div>`
+ const rowsH=all.slice(0,150).map(e=>`<div class="r"><div><b>${dot(e.type)}${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${fd(e.date)}${e.odometer!=null?' · ไมล์ '+fmt(e.odometer):''}${e.dk!=null?' (+'+fmt(e.dk)+' กม.)':''}${e.dd!=null?' · '+e.dd+' วัน':''}</div>`
   +(e.type==='fuel'?`<div class="m">${esc(e.fuel_type)} · ${fmt(e.liters,2)} ล. @${fmt(e.fuel_price,2)}${e.full_tank?' · เต็มถัง':''}</div>`:'')
   +(e.place_name?`<div class="m">${esc(e.place_name)}</div>`:'')+(e.note?`<div class="m">${esc(e.note)}</div>`:'')+(e.review?`<div class="m">⚠ ${esc(e.review)}</div>`:'')
   +`</div><b>${e.amount!=null?fmt(e.amount,2):'–'}</b><button class="lk" data-a="edit" data-v="${e.id}">แก้</button><button class="lk" data-a="del" data-v="${e.id}">ลบ</button></div>`).join('');
@@ -170,17 +174,24 @@ function vSet(){const d=D();return hd('ตั้งค่า')
 
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'],be=()=>D().settings.year_format==='BE';
 const curVid=()=>(S.F&&S.F.vid)||(D().vehicles[0]||{}).vehicle_id;
+const kc=t=>`var(--k-${TY.some(x=>x[0]===t)?t:'other'})`;
+const dot=t=>`<i class="dt" style="background:${kc(t)}"></i>`;
+const amt=a=>a>=1e4?(a/1e3).toFixed(1)+'k':fmt(Math.round(a));
 function vCal(){const vid=curVid();if(!vid)return hd('ปฏิทิน')+'<p class="m">ยังไม่มีรถ</p>';
  const cm=S.cm||(S.cm=iso().slice(0,7)),[y,m]=cm.split('-').map(Number),first=new Date(y,m-1,1).getDay(),dim=new Date(y,m,0).getDate();
  const E=ents(vid).filter(e=>e.date.startsWith(cm)),by={};E.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
  const tot=E.reduce((s,e)=>s+(e.amount||0),0),td=iso();let cells=WD.map(w=>`<div class="h">${w}</div>`).join('');
  for(let i=0;i<first;i++)cells+='<i></i>';
- for(let d=1;d<=dim;d++){const ds=cm+'-'+String(d).padStart(2,'0'),L=by[ds]||[],a=L.reduce((s,e)=>s+(e.amount||0),0);
-  cells+=`<button class="cd${ds===td?' td':''}${ds===S.cd?' on':''}" data-a="cday" data-v="${ds}"><b>${d}</b>${L.length?`<small>${a>=1000?(a/1000).toFixed(1)+'k':Math.round(a)}</small>`:''}</button>`}
+ const ord=TY.map(x=>x[0]);
+ for(let d=1;d<=dim;d++){const ds=cm+'-'+String(d).padStart(2,'0'),L=by[ds]||[],g={};L.forEach(e=>g[e.type]=(g[e.type]||0)+(e.amount||0));
+  const ks=Object.keys(g).sort((a,b)=>ord.indexOf(a)-ord.indexOf(b)),sh=ks.length>3?ks.slice(0,2):ks;
+  cells+=`<button class="cd${ds===td?' td':''}${ds===S.cd?' on':''}" data-a="cday" data-v="${ds}"><b>${d}</b>${sh.map(k=>`<span class="pl" style="background:${kc(k)}">${g[k]?amt(g[k]):'•'}</span>`).join('')}${ks.length>3?`<small>+${ks.length-2}</small>`:''}</button>`}
+ const lt={};E.forEach(e=>lt[e.type]=(e.amount||0)+(lt[e.type]||0));
+ const lg=Object.keys(lt).sort((a,b)=>ord.indexOf(a)-ord.indexOf(b)).map(k=>`<span>${dot(k)}${tl(k)} ${fmt(lt[k])}</span>`).join('');
  const sd=S.cd&&S.cd.startsWith(cm)?S.cd:'',DL=sd?(by[sd]||[]):[];
- const panel=sd?`<p class="m">${fd(sd)}</p>`+(DL.length?DL.map(e=>`<div class="r"><div><b>${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${e.odometer!=null?'ไมล์ '+fmt(e.odometer):''}${e.type==='fuel'?' · '+fmt(e.liters,2)+' ล.':''}</div></div><b>${e.amount!=null?fmt(e.amount,2):'–'}</b><button class="lk" data-a="edit" data-v="${e.id}">แก้</button></div>`).join(''):'<p class="m">ไม่มีรายการ</p>')+`<button class="btn" data-a="addday" data-v="${sd}">+ เพิ่มรายการวันที่ ${fd(sd)}</button>`:'<p class="m">แตะวันที่เพื่อดู/เพิ่มรายการ</p>';
+ const panel=sd?`<p class="m">${fd(sd)}</p>`+(DL.length?DL.map(e=>`<div class="r"><div><b>${dot(e.type)}${tl(e.type)}</b>${e.item?' · '+esc(e.item):''}<div class="m">${e.odometer!=null?'ไมล์ '+fmt(e.odometer):''}${e.type==='fuel'?' · '+fmt(e.liters,2)+' ล.':''}</div></div><b>${e.amount!=null?fmt(e.amount,2):'–'}</b><button class="lk" data-a="edit" data-v="${e.id}">แก้</button></div>`).join(''):'<p class="m">ไม่มีรายการ</p>')+`<button class="btn" data-a="addday" data-v="${sd}">+ เพิ่มรายการวันที่ ${fd(sd)}</button>`:'<p class="m">แตะวันที่เพื่อดู/เพิ่มรายการ</p>';
  return hd('ปฏิทิน')+vchips(vid)+`<div class="row" style="justify-content:space-between"><button class="chip" data-a="cmo" data-v="-1" aria-label="เดือนก่อน">‹</button><b>${MON[m-1]} ${be()?y+543:y}</b><button class="chip" data-a="cmo" data-v="0">วันนี้</button><button class="chip" data-a="cmo" data-v="1" aria-label="เดือนถัดไป">›</button></div>`
- +`<div class="calc"><span>${E.length} รายการ</span><b>฿${fmt(tot,2)}</b></div><div class="cal">${cells}</div>`+panel}
+ +`<div class="calc"><span>${E.length} รายการ</span><b>฿${fmt(tot,2)}</b></div><div class="lg">${lg}</div><div class="cal">${cells}</div>`+panel}
 
 function stats(vid,st){const A=ents(vid),P=A.filter(e=>e.date>=st),F=A.filter(e=>e.type==='fuel'),tank=(veh(vid)||{}).tank_liters||0;
  const tot=P.reduce((s,e)=>s+(e.amount||0),0),fuelT=P.filter(e=>e.type==='fuel').reduce((s,e)=>s+(e.amount||0),0);
@@ -208,7 +219,7 @@ function vSum(){const vid=curVid();if(!vid)return hd('สรุป')+'<p class="
  +`<div class="row">${mc('ค่าใช้จ่ายรวม','฿'+fmt(s.tot),s.P.length+' รายการ')}${mc('ค่าน้ำมัน','฿'+fmt(s.fuelT),s.nf+' ครั้ง')}</div>`
  +`<div class="row">${mc('ระยะทาง',s.dist!=null?fmt(s.dist)+' กม.':'–','')}${mc('บาท/กม.',s.dist>0?fmt(s.tot/s.dist,2):'–',s.dist>0&&s.fuelT?'ค่าน้ำมัน '+fmt(s.fuelT/s.dist,2):'')}</div>`
  +`<div class="row">${mc('กม./ลิตร',s.kl?fmt(s.kl,1):'–',s.kt)}${mc('ราคาน้ำมันเฉลี่ย',s.ap?fmt(s.ap,2):'–','บาท/ลิตร')}</div>`
- +`<div class="card" style="margin:8px 0"><span>แยกตามประเภท</span>${tk.map(k=>`<div class="br"><span>${tl(k)}</span><div><u style="width:${by[k]/mx*100}%"></u></div><b>${fmt(by[k])}</b></div>`).join('')||'<div class="m">ไม่มีรายการ</div>'}</div>`
+ +`<div class="card" style="margin:8px 0"><span>แยกตามประเภท</span>${tk.map(k=>`<div class="br"><span>${tl(k)}</span><div><u style="width:${by[k]/mx*100}%;background:${kc(k)}"></u></div><b>${fmt(by[k])}</b></div>`).join('')||'<div class="m">ไม่มีรายการ</div>'}</div>`
  +spark(vid,st)+trend(vid)+'<p class="m">ระยะทางและกม./ลิตร ไม่นับรายการที่ติดธง ⚠</p>'}
 const rid=()=>[...crypto.getRandomValues(new Uint8Array(4))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const nOf=e=>{const m=String((e.item||'')+' '+(e.note||'')).match(/งวด\D*(\d+)/);return m?+m[1]:null};
