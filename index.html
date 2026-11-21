@@ -60,7 +60,7 @@ button.br{width:100%;border:0;background:none;padding:0;min-height:40px;text-ali
 <script>
 const API='https://script.google.com/macros/s/AKfycbxHItXcPCj7guHs9WCVc5ER0pCS0NfXVDLJ_PTEZo8VRD5rWC5SUeAbX8Jin59jiA4U/exec'; // ← วาง Apps Script Web App URL ที่นี่
 const L=localStorage,J=JSON,$=s=>document.querySelector(s);
-const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'add',F:null,p:{},V:{},I:{},cm:'',cd:'',sp:'m',R:{},M:null,rt:'',sp0:'',ok:0};
+const S={cfg:J.parse(L.cfg||'{}'),data:J.parse(L.data||'null'),q:J.parse(L.q||'[]'),th:L.th||'auto',tab:'cal',F:null,p:{},V:{},I:{},cm:'',cd:iso(),sp:'m',R:{},M:null,rt:'',sp0:'',ok:0};
 const TY=[['fuel','เติมน้ำมัน'],['wash','ล้างรถ'],['oil_change','น้ำมันเครื่อง'],['maintenance','บำรุงรักษา'],['repair','ซ่อม'],['inspection','ตรวจสภาพ'],['insurance','ประกัน/พ.ร.บ.'],['registration','ต่อทะเบียน'],['installment','ค่างวด'],['other','อื่นๆ']];
 const NO=['installment','insurance','registration'],FT=['Gasohol95','Gasohol91','E20','E85','B7','Super Power'];
 const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -367,7 +367,8 @@ document.addEventListener('input',e=>{const k=e.target.dataset.k,v=e.target.valu
 
 if(location.hash.indexOf('#join=')===0){S.p.pc=location.hash.slice(6);history.replaceState(null,'',location.pathname+location.search)}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-render();flush();
+ S.cd=iso();
+ render();flush();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)flush()});addEventListener('online',flush);
 </script>
 </body>
