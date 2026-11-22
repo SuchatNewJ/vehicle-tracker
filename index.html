@@ -106,7 +106,7 @@ const mq=matchMedia('(prefers-color-scheme: dark)');
 function th(){document.documentElement.toggleAttribute('data-d',S.th==='dark'||(S.th==='auto'&&mq.matches))}mq.onchange=th;
 
 // ----- หน้าจอ -----
-const hd=t=>`<div class="row" style="justify-content:space-between"><h1>${t}</h1><span class="m">${S.ok?'● ซิงก์แล้ว':'○ ออฟไลน์'}${S.q.length?' · รอส่ง '+S.q.length:''}</span><button class="chip" aria-label="สลับธีม" data-a="tg" style="width:44px;padding:0">◐</button></div>`;
+const hd=t=>`<div class="row" style="justify-content:space-between"><h1>${t}</h1><span class="m">${S.ok?'● ซิงก์แล้ว':'○ ออฟไลน์'}${S.q.length?' · รอส่ง '+S.q.length:''}</span><button class="chip" aria-label="ข้อมูลรถ" data-a="vinfo" data-v="${esc(curVid()||'')}" style="width:44px;padding:0">ℹ</button><button class="chip" aria-label="สลับธีม" data-a="tg" style="width:44px;padding:0">◐</button></div>`;
 const bar=()=>`<nav class="bar">${[['add','บันทึก'],['cal','ปฏิทิน'],['list','รายการ'],['sum','สรุป'],['set','ตั้งค่า']].map(t=>`<button class="${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${IC[t[0]]}</svg>${t[1]}</button>`).join('')}</nav>`;
 const ch=(l,a,v,on)=>`<button class="chip${on?' on':''}" data-a="${a}" data-v="${esc(v)}">${l}</button>`;
 const vchips=cur=>D().vehicles.length>1?`<div class="row sc">${D().vehicles.map(v=>ch(pimg(v,'vi')+esc(v.nickname),'veh',v.vehicle_id,v.vehicle_id===cur)).join('')}</div>`:'';
@@ -268,10 +268,15 @@ function recSec(){const vid=S.F&&S.F.vid;if(!vid)return'';const R=S.R,list=(D().
 function addrec(){const R=S.R,vid=S.F&&S.F.vid;if(!vid||!S.data)return toast('ยังไม่ได้ซิงก์');if(!num(R.ra)||!R.rs)return toast('ใส่ยอดและเดือนของงวดที่ 1');
  const r={rec_id:rid(),vehicle_id:vid,type:'installment',item:R.rn||'ค่างวดรถ',amount:num(R.ra),day_of_month:num(R.rd)||1,start_month:R.rs,total_count:num(R.rt),active:true};
  (S.data.recurring=S.data.recurring||[]).push(r);S.q.push({a:'saveRecurring',p:r});S.R={};persist();flush();render()}
+function vInfo(){const v=veh(S.VD);if(!v)return'';const j=a=>a.filter(Boolean).join(' ');
+ const t=[['ทะเบียน',j([v.plate,v.province])],['วันที่จดทะเบียน',v.registered_date?fd(v.registered_date):''],['รุ่นปี',v.model_year],['สี',v.color],['ชื่อรุ่น',v.model_name],['แบบ',v.body_type],['เลขตัวถัง',j([v.chassis_no,v.chassis_location])],['เลขเครื่องยนต์',j([v.engine_no,v.engine_location])],['เครื่องยนต์',v.engine_spec],['แรงม้า',v.horsepower],['น้ำหนัก (กก.)',v.weight_kg],['ความจุถัง (ลิตร)',v.tank_liters]].filter(x=>x[1]);
+ return`<div style="position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center"><div data-a="vdx" style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div><div style="position:relative;width:100%;max-width:480px;max-height:85vh;overflow:auto;background:var(--s);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))"><div class="vs">${pimg(v,'p')}<div class="t"><b style="font-size:18px">${esc(v.nickname)}</b></div></div>`
+ +(t.length?t.map(x=>`<div class="row" style="justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--b);padding-bottom:8px"><span class="m">${x[0]}</span><b style="font-weight:500;text-align:right;word-break:break-all">${esc(x[1])}</b></div>`).join(''):'<p class="m">ยังไม่มีข้อมูล กรอกเพิ่มในชีต Vehicles</p>')
+ +`<div class="row"><button class="chip" data-a="copyv" data-v="${esc(v.vehicle_id)}">คัดลอก</button><button class="chip on" data-a="vdx">ปิด</button></div></div></div>`}
 function render(){th();const a=$('#app');
  if(!S.cfg.token){a.innerHTML=vPair();return}
  if(!S.F&&D().vehicles.length)S.F=newF(L.lv&&veh(L.lv)?L.lv:D().vehicles[0].vehicle_id);
- a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar();document.querySelectorAll('.sc').forEach(c=>{const o=c.querySelector('.on');if(o)c.scrollLeft=o.offsetLeft-c.offsetLeft-(c.clientWidth-o.offsetWidth)/2});if(S.scr){S.scr=0;const el=$('#vform');if(el)el.scrollIntoView({block:'start'})}if(S.tab==='add')gps()}
+ a.innerHTML=({add:vAdd,cal:vCal,list:vList,sum:vSum,set:vSet}[S.tab]||vAdd)()+bar()+vInfo();document.querySelectorAll('.sc').forEach(c=>{const o=c.querySelector('.on');if(o)c.scrollLeft=o.offsetLeft-c.offsetLeft-(c.clientWidth-o.offsetWidth)/2});if(S.scr){S.scr=0;const el=$('#vform');if(el)el.scrollIntoView({block:'start'})}if(S.tab==='add')gps()}
 
 // ----- ตำแหน่ง: ใช้ชื่อปั๊มจากรายการเก่าที่อยู่ในรัศมี 150 ม. -----
 function gps(){if(S.gps||!navigator.geolocation||D().settings.auto_gps===false)return;S.gps=1;
