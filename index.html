@@ -327,6 +327,8 @@ function delok(){const M=S.M;if(!M||!S.data)return;const n=cnt(M.from);
 function act(a,v){const F=S.F;
  if(a==='tab'){if(v==='sum'&&S.tab==='sum'&&S.rt){S.rt='';S.sp=S.sp0||'m'}S.tab=v}
  else if(a==='cday')S.cd=v;
+ else if(a==='vinfo')S.VD=v;
+ else if(a==='vdx')S.VD='';
  else if(a==='sp')S.sp=v;
  else if(a==='cmo'){if(v==='0'){S.cm=iso().slice(0,7);S.cd=iso()}else{const[y,m]=S.cm.split('-').map(Number),d=new Date(y,m-1+Number(v),1);S.cm=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}}
  else if(a==='addday'){S.F=newF(S.F.vid);S.F.date=v;S.tab='add'}
